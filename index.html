@@ -17,6 +17,7 @@
       --text-muted: #aaaaaa;
       --input-bg: #262626;
       --success-color: #00ff66;
+      --error-color: #ff3333;
     }
 
     * {
@@ -190,6 +191,7 @@
     }
 
     .overlay.success i { color: var(--success-color); }
+    .overlay.error i { color: var(--error-color); }
     
     .overlay h2 {
       font-weight: 600;
@@ -222,7 +224,7 @@
 <body>
 
   <div class="container">
-    <!-- Status Overlay (Loading/Success) -->
+    <!-- Status Overlay (Loading/Success/Error) -->
     <div id="overlay" class="overlay">
       <i id="overlayIcon" class="fa-solid status-icon"></i>
       <h2 id="overlayTitle">Processing...</h2>
@@ -278,6 +280,9 @@
   </div>
 
   <script>
+    // IPASTE DITO ANG IYONG BAGONG WEB APP URL MULA SA GOOGLE SHEETS
+    const googleSheetUrl = "https://script.google.com/macros/s/AKfycbz7VpmUicudnh1MHCT-U0BbjObO10CiZ-F_Ur3nKl1pIisohURnb_amBgB673nAgAJt/exec"; 
+
     function handleFormSubmit(event) {
       event.preventDefault();
       
@@ -287,7 +292,7 @@
       const msg = document.getElementById('overlayMessage');
       const resetBtn = document.getElementById('btnReset');
 
-      // Show Loading State
+      // Pakita ang Loading State
       overlay.style.display = 'flex';
       overlay.className = 'overlay loading';
       icon.className = 'fa-solid fa-circle-notch status-icon';
@@ -295,7 +300,7 @@
       msg.innerText = 'Connecting to Google Sheets database.';
       resetBtn.style.display = 'none';
 
-      // Gather Form Data
+      // Pagkuha ng mga isinulat sa Form
       const formData = {
         location: document.getElementById('location').value,
         item: document.getElementById('item').value,
@@ -303,62 +308,38 @@
         contactNumber: document.getElementById('contactNumber').value
       };
 
-      // Call Google Apps Script backend
-      google.script.run
-        .withSuccessHandler(function(response) {
-          if(response.status === "success") {
-            overlay.className = 'overlay success';
-            icon.className = 'fa-solid fa-circle-check status-icon';
-            title.innerText = 'Success!';
-            msg.innerText = 'The asset deployment has been recorded.';
-            resetBtn.style.display = 'inline-block';
-            document.getElementById('trackerForm').reset();
-          } else {
-            showError(response.message);
-          }
-        })
-        .withFailureHandler(function(error) {
-          showError(error.toString());
-        })
-        .submitData(formData);
-    }
-
-    function showError(errorMsg) {
-      const overlay = document.getElementById('overlay');
-      const icon = document.getElementById('overlayIcon');
-      const title = document.getElementById('overlayTitle');
-      const msg = document.getElementById('overlayMessage');
-      const resetBtn = document.getElementById('btnReset');
-
-      overlay.className = 'overlay';
-      icon.className = 'fa-solid fa-circle-exclamation status-icon';
-      icon.style.color = '#ff3333';
-      title.innerText = 'Submission Failed';
-      msg.innerText = errorMsg;
-      resetBtn.style.display = 'inline-block';
-      resetBtn.innerText = 'Try Again';
+      // Paggamit ng Fetch API para ipadala ang data sa Google Sheet Web App
+      fetch(googleSheetUrl, {
+        method: "POST",
+        mode: "no-cors", // Iniiwasan nito ang pag-block ng browser
+        cache: "no-cache",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(() => {
+        // Dahil naka 'no-cors' mode tayo, awtomatiko itong magiging matagumpay basta tama ang URL
+        overlay.className = 'overlay success';
+        icon.className = 'fa-solid fa-circle-check status-icon';
+        title.innerText = 'Success!';
+        msg.innerText = 'Asset log details have been saved successfully.';
+        resetBtn.style.display = 'block';
+        document.getElementById('trackerForm').reset();
+      })
+      .catch(error => {
+        overlay.className = 'overlay error';
+        icon.className = 'fa-solid fa-circle-xmark status-icon';
+        title.innerText = 'Submission Failed';
+        msg.innerText = 'Error connecting to database: ' + error;
+        resetBtn.style.display = 'block';
+      });
     }
 
     function resetForm() {
-      document.getElementById('overlay').style.display = 'none';
+      const overlay = document.getElementById('overlay');
+      overlay.style.display = 'none';
     }
   </script>
-  // I-paste sa loob ng panipi ("") ang kinopya mong URL mula sa Google Sheets
-  const googleSheetUrl = "https://script.google.com/macros/s/AKfycbz7VpmUicudnh1MHCT-U0BbjObO10CiZ-F_Ur3nKl1pIisohURnb_amBgB673nAgAJt/exec"; 
-
-  fetch(googleSheetUrl)
-    .then(response => response.json())
-    .then(data => {
-       console.log("Data:", data);
-       let output = "<h3>Data mula sa Google Sheets:</h3><ul>";
-       data.forEach(row => {
-          output += `<li>${row.join(" | ")}</li>`;
-       });
-       output += "</ul>";
-       document.body.innerHTML += output;
-    })
-    .catch(error => console.error("Error:", error));
-</script>
- 
 </body>
 </html>
