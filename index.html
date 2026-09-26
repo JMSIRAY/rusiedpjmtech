@@ -343,5 +343,22 @@
       document.getElementById('overlay').style.display = 'none';
     }
   </script>
+  // I-paste sa loob ng panipi ("") ang kinopya mong URL mula sa Google Sheets
+  const googleSheetUrl = "https://script.google.com/macros/s/AKfycbz7VpmUicudnh1MHCT-U0BbjObO10CiZ-F_Ur3nKl1pIisohURnb_amBgB673nAgAJt/exec"; 
+
+  fetch(googleSheetUrl)
+    .then(response => response.json())
+    .then(data => {
+       console.log("Data:", data);
+       let output = "<h3>Data mula sa Google Sheets:</h3><ul>";
+       data.forEach(row => {
+          output += `<li>${row.join(" | ")}</li>`;
+       });
+       output += "</ul>";
+       document.body.innerHTML += output;
+    })
+    .catch(error => console.error("Error:", error));
+</script>
+ 
 </body>
 </html>
