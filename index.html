@@ -17,7 +17,6 @@
       --text-muted: #aaaaaa;
       --input-bg: #262626;
       --success-color: #00ff66;
-      --error-color: #ff3333;
     }
 
     * {
@@ -191,7 +190,6 @@
     }
 
     .overlay.success i { color: var(--success-color); }
-    .overlay.error i { color: var(--error-color); }
     
     .overlay h2 {
       font-weight: 600;
@@ -224,7 +222,7 @@
 <body>
 
   <div class="container">
-    <!-- Status Overlay (Loading/Success/Error) -->
+    <!-- Status Overlay (Loading/Success) -->
     <div id="overlay" class="overlay">
       <i id="overlayIcon" class="fa-solid status-icon"></i>
       <h2 id="overlayTitle">Processing...</h2>
@@ -280,9 +278,6 @@
   </div>
 
   <script>
-    // Narito ang iyong orihinal na Google Sheets URL
-    const googleSheetUrl = "https://docs.google.com/spreadsheets/d/1YsgAXswXX0lxhBvb-wdyjaxoy-mLb-kwcj5r4yB1Cfw/edit?usp=sharing"; 
-
     function handleFormSubmit(event) {
       event.preventDefault();
       
@@ -292,7 +287,7 @@
       const msg = document.getElementById('overlayMessage');
       const resetBtn = document.getElementById('btnReset');
 
-      // Pakita ang Loading State
+      // Show Loading State
       overlay.style.display = 'flex';
       overlay.className = 'overlay loading';
       icon.className = 'fa-solid fa-circle-notch status-icon';
@@ -300,48 +295,52 @@
       msg.innerText = 'Connecting to Google Sheets database.';
       resetBtn.style.display = 'none';
 
-      // Pagkuha ng mga isinulat sa Form
-      const locationVal = document.getElementById('location').value;
-      const itemVal = document.getElementById('item').value;
-      const receivedByVal = document.getElementById('receivedBy').value;
-      const contactNumberVal = document.getElementById('contactNumber').value;
+      // Gather Form Data
+      const formData = {
+        location: document.getElementById('location').value,
+        item: document.getElementById('item').value,
+        receivedBy: document.getElementById('receivedBy').value,
+        contactNumber: document.getElementById('contactNumber').value
+      };
 
-      // Inaayos ang pagpapadala gamit ang URLSearchParams para basahin ng e.parameter ng Code.gs mo
-      const formData = new URLSearchParams();
-      formData.append('location', locationVal);
-      formData.append('item', itemVal);
-      formData.append('receivedBy', receivedByVal);
-      formData.append('contactNumber', contactNumberVal);
+      // Call Google Apps Script backend
+      google.script.run
+        .withSuccessHandler(function(response) {
+          if(response.status === "success") {
+            overlay.className = 'overlay success';
+            icon.className = 'fa-solid fa-circle-check status-icon';
+            title.innerText = 'Success!';
+            msg.innerText = 'The asset deployment has been recorded.';
+            resetBtn.style.display = 'inline-block';
+            document.getElementById('trackerForm').reset();
+          } else {
+            showError(response.message);
+          }
+        })
+        .withFailureHandler(function(error) {
+          showError(error.toString());
+        })
+        .submitData(formData);
+    }
 
-      // Paggamit ng Fetch API patungo sa Google Script
-      fetch(googleSheetUrl, {
-        method: "POST",
-        mode: "no-cors", 
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: formData.toString()
-      })
-      .then(() => {
-        overlay.className = 'overlay success';
-        icon.className = 'fa-solid fa-circle-check status-icon';
-        title.innerText = 'Success!';
-        msg.innerText = 'Asset log details have been saved successfully.';
-        resetBtn.style.display = 'block';
-        document.getElementById('trackerForm').reset();
-      })
-      .catch(error => {
-        overlay.className = 'overlay error';
-        icon.className = 'fa-solid fa-circle-xmark status-icon';
-        title.innerText = 'Submission Failed';
-        msg.innerText = 'Error connecting to database: ' + error;
-        resetBtn.style.display = 'block';
-      });
+    function showError(errorMsg) {
+      const overlay = document.getElementById('overlay');
+      const icon = document.getElementById('overlayIcon');
+      const title = document.getElementById('overlayTitle');
+      const msg = document.getElementById('overlayMessage');
+      const resetBtn = document.getElementById('btnReset');
+
+      overlay.className = 'overlay';
+      icon.className = 'fa-solid fa-circle-exclamation status-icon';
+      icon.style.color = '#ff3333';
+      title.innerText = 'Submission Failed';
+      msg.innerText = errorMsg;
+      resetBtn.style.display = 'inline-block';
+      resetBtn.innerText = 'Try Again';
     }
 
     function resetForm() {
-      const overlay = document.getElementById('overlay');
-      overlay.style.display = 'none';
+      document.getElementById('overlay').style.display = 'none';
     }
   </script>
 </body>
