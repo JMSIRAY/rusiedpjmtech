@@ -280,8 +280,8 @@
   </div>
 
   <script>
-    // IPASTE DITO ANG IYONG BAGONG WEB APP URL MULA SA GOOGLE SHEETS
-    const googleSheetUrl = "https://script.google.com/macros/s/AKfycbz_UAaYWJmjIlhAB90M_BQ2r76vyuhk5UNaVXiw7SS_2VKRjZI9YioZIck_K6s9ihY/exec"; 
+    // Narito ang iyong orihinal na Google Sheets URL
+    const googleSheetUrl = "https://google.com"; 
 
     function handleFormSubmit(event) {
       event.preventDefault();
@@ -301,25 +301,28 @@
       resetBtn.style.display = 'none';
 
       // Pagkuha ng mga isinulat sa Form
-      const formData = {
-        location: document.getElementById('location').value,
-        item: document.getElementById('item').value,
-        receivedBy: document.getElementById('receivedBy').value,
-        contactNumber: document.getElementById('contactNumber').value
-      };
+      const locationVal = document.getElementById('location').value;
+      const itemVal = document.getElementById('item').value;
+      const receivedByVal = document.getElementById('receivedBy').value;
+      const contactNumberVal = document.getElementById('contactNumber').value;
 
-      // Paggamit ng Fetch API para ipadala ang data sa Google Sheet Web App
+      // Inaayos ang pagpapadala gamit ang URLSearchParams para basahin ng e.parameter ng Code.gs mo
+      const formData = new URLSearchParams();
+      formData.append('location', locationVal);
+      formData.append('item', itemVal);
+      formData.append('receivedBy', receivedByVal);
+      formData.append('contactNumber', contactNumberVal);
+
+      // Paggamit ng Fetch API patungo sa Google Script
       fetch(googleSheetUrl, {
         method: "POST",
-        mode: "no-cors", // Iniiwasan nito ang pag-block ng browser
-        cache: "no-cache",
+        mode: "no-cors", 
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/x-www-form-urlencoded"
         },
-        body: JSON.stringify(formData)
+        body: formData.toString()
       })
       .then(() => {
-        // Dahil naka 'no-cors' mode tayo, awtomatiko itong magiging matagumpay basta tama ang URL
         overlay.className = 'overlay success';
         icon.className = 'fa-solid fa-circle-check status-icon';
         title.innerText = 'Success!';
